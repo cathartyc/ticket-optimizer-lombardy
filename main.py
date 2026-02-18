@@ -27,6 +27,9 @@ def is_last_day_of_the_month(month: int, day: date) -> bool:
     """True if the given day is the last day of the given month."""
     return month == day.month and (day + timedelta(1)).day == 1
 
+def cost(i: date, j: date, free_days: set[date]) -> float | None:
+    if i in free_days and j in free_days:
+        return None
     delta = j - i
     free_inside_interval = [i+timedelta(d) in free_days for d in range(delta.days)]
     if all(free_inside_interval):
@@ -47,8 +50,10 @@ def is_last_day_of_the_month(month: int, day: date) -> bool:
         case 7:
             return week_cost
         case _:
-            if j == end_date and delta.days < 7:
+            if delta.days < 7:
                 return week_cost
+            if is_last_day_of_the_month(i.month, j):
+                return month_cost
             return None
 
 def parse_date(date_: str) -> date:
@@ -57,7 +62,7 @@ def parse_date(date_: str) -> date:
     return date(year if year > 2000 else year + 2000, month, day)
 
 def main():
-    free_days: list[date] = []
+    free_days: set[date] = set()
 
     start_date: date = parse_date(input("inserire giorno, mese e anno di partenza: "))
     end_date: date = parse_date(input("inserire giorno, mese e anno di arrivo (escluso): "))
@@ -74,14 +79,14 @@ def main():
             case "1":
                 free_day = input("inserire giorno mese (i weekend sono già esclusi):\n")
                 new_date = parse_date(f"{free_day} {start_date.year}")
-                free_days.append(new_date)
+                free_days.add(new_date)
             case "2":
                 start = input("inserire giorno mese di partenza:\n")
                 start_d = parse_date(f"{start} {start_date.year}")
                 end = input("inserire giorno mese di arrivo (escluso):\n")
                 end_d = parse_date(f"{end} {start_date.year}")
                 while start_d != end_d:
-                    free_days.append(start_d)
+                    free_days.add(start_d)
                     start_d += timedelta(1)
             case "q":
                 break
@@ -93,7 +98,7 @@ def main():
     E: dict[tuple[date,date], float] = {}
     for i in range(len(dates)-1):
         for j in range(i+1, len(dates)):
-            interval_cost = cost(dates[i], dates[j], end_date, free_days)
+            interval_cost = cost(dates[i], dates[j], free_days)
             if interval_cost is None:
                 continue
             E[(dates[i], dates[j])] = interval_cost
