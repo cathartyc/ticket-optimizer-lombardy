@@ -24,14 +24,8 @@ week_cost: Final[float] = 46.5
 month_cost: Final[float] = 116.0
 
 def is_last_day_of_the_month(month: int, day: date) -> bool:
-    if day.month != month:
-        return False
-    next = day + timedelta(1)
-    return next.month != month
-
-def cost(i: date, j: date, end_date: date, free_days: list[date]) -> float | None:
-    if i.day == 1 and is_last_day_of_the_month(i.month, j-timedelta(1)):
-        return month_cost
+    """True if the given day is the last day of the given month."""
+    return month == day.month and (day + timedelta(1)).day == 1
 
     delta = j - i
     free_inside_interval = [i+timedelta(d) in free_days for d in range(delta.days)]
