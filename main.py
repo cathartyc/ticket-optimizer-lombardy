@@ -65,7 +65,7 @@ def main():
     free_days: set[date] = set()
 
     start_date: date = parse_date(input("inserire giorno, mese e anno di partenza: "))
-    end_date: date = parse_date(input("inserire giorno, mese e anno di arrivo (escluso): "))
+    end_date: date = parse_date(input("inserire giorno, mese e anno di arrivo: "))
 
     #
     while True:
@@ -93,7 +93,11 @@ def main():
             case _:
                 print("selezione non valida")
 
-    dates: list[date] = [start_date + timedelta(i) for i in range((end_date - start_date).days + 1)]
+    dates: list[date] = [
+            start_date + timedelta(i)
+            for i in range((end_date - start_date).days + 1)
+            if start_date+timedelta(i) not in free_days
+    ]
 
     E: dict[tuple[date,date], float] = {}
     for i in range(len(dates)-1):
