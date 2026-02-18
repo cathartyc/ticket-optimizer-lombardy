@@ -131,9 +131,12 @@ def main():
             if E[i, j] > 0:
                 if (j - i).days > 7:
                     title = "IOVIAGGIO mensile"
-                else:
+                elif (j - i).days < 4:
                     title = f"IOVIAGGIO da {(j - i).days} giorni"
-                print(f'{i}->{j - timedelta(1)} {title}')
+                else:
+                    title = f"IOVIAGGIO da 7 giorni"
+                print(f'{i}->{j} {title}')
+
 
 if __name__ == "__main__":
     main()
