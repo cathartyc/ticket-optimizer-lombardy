@@ -28,18 +28,19 @@ def is_last_day_of_the_month(month: int, day: date) -> bool:
     return month == day.month and (day + timedelta(1)).day == 1
 
 def cost(i: date, j: date, free_days: set[date]) -> float | None:
+    delta = j - i
+    j -= timedelta(1)
     if i in free_days and j in free_days:
         return None
-    delta = j - i
     free_inside_interval = [i+timedelta(d) in free_days for d in range(delta.days)]
     if all(free_inside_interval):
         return 0
     start = i
     for d in range(delta.days):
         if i+timedelta(d) not in free_days:
+            delta = j - start + timedelta(1)
             start = i+timedelta(d)
             break
-    delta = j - start
     match (delta.days):
         case 1:
             return day_cost
@@ -67,7 +68,6 @@ def main():
     start_date: date = parse_date(input("inserire giorno, mese e anno di partenza: "))
     end_date: date = parse_date(input("inserire giorno, mese e anno di arrivo: "))
 
-    #
     while True:
         selection = input(dedent("""\
             selezionare modalità di inserimento giorni liberi:
@@ -96,7 +96,6 @@ def main():
     dates: list[date] = [
             start_date + timedelta(i)
             for i in range((end_date - start_date).days + 1)
-            if start_date+timedelta(i) not in free_days
     ]
 
     E: dict[tuple[date,date], float] = {}
@@ -135,7 +134,9 @@ def main():
                     title = f"IOVIAGGIO da {(j - i).days} giorni"
                 else:
                     title = f"IOVIAGGIO da 7 giorni"
-                print(f'{i}->{j} {title}')
+                print(f'{i}->{j - timedelta(1)} {title}')
+            else:
+                print(f'{i}->{j - timedelta(1)} no cost')
 
 
 if __name__ == "__main__":
