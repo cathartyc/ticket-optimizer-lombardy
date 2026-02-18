@@ -11,17 +11,17 @@ m = mip.Model()
 m.verbose = 1
 
 """
-IOVIAGGIO mensile 110€
-IOVIAGGIO 7 giorni 44€
-IOVIAGGIO 3 giorni 33.50€
-IOVIAGGIO 2 giorni 27.50€
-IOVIAGGIO 1 giorno 16.50€
+IOVIAGGIO mensile  116.00€
+IOVIAGGIO 7 giorni  46.50€
+IOVIAGGIO 3 giorni  35.00€
+IOVIAGGIO 2 giorni  29.00€
+IOVIAGGIO 1 giorno  17.50€
 """
-day_cost: Final[float] = 16.5
-two_days_cost: Final[float] = 27.5
-three_days_cost: Final[float] = 33.5
-week_cost: Final[float] = 44.0
-month_cost: Final[float] = 110.0
+day_cost: Final[float] = 17.5
+two_days_cost: Final[float] = 29.0
+three_days_cost: Final[float] = 35.0
+week_cost: Final[float] = 46.5
+month_cost: Final[float] = 116.0
 
 def is_last_day_of_the_month(month: int, day: date) -> bool:
     if day.month != month:
