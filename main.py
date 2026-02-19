@@ -17,15 +17,15 @@ def exit_gracefully(_sig_num: int, _stack_frame: FrameType | None):
     print('\nClosing...')
     sys.exit(0)
 
-# IOVIAGGIO daily subscription
+# IVOL daily ticket
 IVOL_DAILY_COST: Final[float] = 17.5
-# IOVIAGGIO 2-days subscription
+# IVOL 2-days ticket
 IVOL_TWO_DAYS_COST: Final[float] = 29.0
-# IOVIAGGIO 3->days subscription
+# IVOL 3->days ticket
 IVOL_THREE_DAYS_COST: Final[float] = 35.0
-# IOVIAGGIO 7-days subscription
+# IVOL 7-days ticket
 IVOL_SEVEN_DAYS_COST: Final[float] = 46.5
-# IOVIAGGIO monthly subscription
+# IVOL monthly subscription
 IVOL_MONTHLY_COST: Final[float] = 116.0
 
 def is_last_day_of_the_month(month: int, day: date) -> bool:
