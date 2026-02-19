@@ -1,13 +1,15 @@
+from __future__ import annotations
 from datetime import date, timedelta
 import signal
 import sys
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
 import mip
 from mip.constants import OptimizationStatus
 
 if TYPE_CHECKING:
+    from typing import Final
     from mip.entities import Var
     from types import FrameType
 
@@ -25,11 +27,11 @@ IOVIAGGIO 3 giorni  35.00€
 IOVIAGGIO 2 giorni  29.00€
 IOVIAGGIO 1 giorno  17.50€
 """
-day_cost: Final[float] = 17.5
-two_days_cost: Final[float] = 29.0
-three_days_cost: Final[float] = 35.0
-week_cost: Final[float] = 46.5
-month_cost: Final[float] = 116.0
+DAY_COST: Final[float] = 17.5
+TWO_DAYS_COST: Final[float] = 29.0
+THREE_DAYS_COST: Final[float] = 35.0
+WEEK_COST: Final[float] = 46.5
+MONTH_COST: Final[float] = 116.0
 
 def is_last_day_of_the_month(month: int, day: date) -> bool:
     """True if the given day is the last day of the given month."""
@@ -51,18 +53,18 @@ def cost(i: date, j: date, free_days: set[date]) -> float | None:
             break
     match (delta.days):
         case 1:
-            return day_cost
+            return DAY_COST
         case 2:
-            return two_days_cost
+            return TWO_DAYS_COST
         case 3:
-            return three_days_cost
+            return THREE_DAYS_COST
         case 7:
-            return week_cost
+            return WEEK_COST
         case _:
             if delta.days < 7:
-                return week_cost
+                return WEEK_COST
             if is_last_day_of_the_month(i.month, j):
-                return month_cost
+                return MONTH_COST
             return None
 
 def parse_date(date_: str) -> date:
@@ -116,7 +118,7 @@ def main():
                 continue
             E[(dates[i], dates[j])] = interval_cost
 
-    f: dict[tuple[date,date], Var] = {(i, j): m.add_var() for (i, j) in E.keys()} # pyright: ignore[reportUnknownMemberType]
+    f: dict[tuple[date,date], Var] = {(i, j): m.add_var(var_type="B") for (i, j) in E.keys()} # pyright: ignore[reportUnknownMemberType]
     b = {i: 0 for i in dates}
     b[start_date] = 1
     b[end_date] = -1
@@ -132,7 +134,7 @@ def main():
     status = m.optimize()
     if status == OptimizationStatus.INFEASIBLE:
         print("Errore nel trovare una soluzione, skill issue del dev.")
-        quit(1)
+        exit(1)
     print(f"Da {start_date} a {end_date}")
     print(f"Il costo totale è di {m.objective_value}€.")
     for (i, j), k in f.items():
