@@ -79,7 +79,9 @@ def main():
     free_days: set[date] = set()
 
     start_date: date = read_date("inserire giorno, mese e anno di partenza: ")
-    end_date: date = read_date("inserire giorno, mese e anno di arrivo (escluso): ")
+    end_date: date = read_date("inserire giorno, mese e anno di arrivo: ")
+    # increment last day for computation reasons
+    end_date += timedelta(1)
 
     while True:
         selection = input(dedent("""\
