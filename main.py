@@ -17,18 +17,16 @@ def exit_gracefully(_sig_num: int, _stack_frame: FrameType | None):
     print('\nClosing...')
     sys.exit(0)
 
-"""
-IOVIAGGIO mensile  116.00€
-IOVIAGGIO 7 giorni  46.50€
-IOVIAGGIO 3 giorni  35.00€
-IOVIAGGIO 2 giorni  29.00€
-IOVIAGGIO 1 giorno  17.50€
-"""
-DAY_COST: Final[float] = 17.5
-TWO_DAYS_COST: Final[float] = 29.0
-THREE_DAYS_COST: Final[float] = 35.0
-WEEK_COST: Final[float] = 46.5
-MONTH_COST: Final[float] = 116.0
+# IOVIAGGIO daily subscription
+IVOL_DAILY_COST: Final[float] = 17.5
+# IOVIAGGIO 2-days subscription
+IVOL_TWO_DAYS_COST: Final[float] = 29.0
+# IOVIAGGIO 3->days subscription
+IVOL_THREE_DAYS_COST: Final[float] = 35.0
+# IOVIAGGIO 7-days subscription
+IVOL_SEVEN_DAYS_COST: Final[float] = 46.5
+# IOVIAGGIO monthly subscription
+IVOL_MONTHLY_COST: Final[float] = 116.0
 
 def is_last_day_of_the_month(month: int, day: date) -> bool:
     """True if the given day is the last day of the given month."""
@@ -78,35 +76,35 @@ def main():
 
     free_days: set[date] = set()
 
-    start_date: date = read_date("inserire giorno, mese e anno di partenza: ")
-    end_date: date = read_date("inserire giorno, mese e anno di arrivo: ")
+    start_date: date = read_date("insert the first day you wanna travel (day month year): ")
+    end_date: date = read_date("insert the last day you wanna travel (day month year): ")
     # increment last day for computation reasons
     end_date += timedelta(1)
 
     while True:
         selection = input(dedent("""\
-            selezionare modalità di inserimento giorni liberi:
-            1: giorni singoli
-            2: intervalli
-            q: procedi con il calcolo
+            Would you like to exclude some days?
+            1: yes, exclude a single day
+            2: yes, exclude a range
+            q: no, proceed with the computation
             """))
         match selection:
             case "1":
-                free_day = input("inserire giorno mese (i weekend sono già esclusi):\n")
-                new_date = read_date(f"{free_day} {start_date.year}")
+                print("1: exclude a single day")
+                new_date = read_date(f"insert the day to exclude (day month year): ")
                 free_days.add(new_date)
             case "2":
-                start = input("inserire giorno mese di partenza:\n")
-                start_d = read_date(f"{start} {start_date.year}")
-                end = input("inserire giorno mese di arrivo (escluso):\n")
-                end_d = read_date(f"{end} {start_date.year}")
+                print("2: exclude a range")
+                start_d = read_date("insert first day of the range to exclude (day month year): ")
+                end_d = read_date("insert last day of the range to exclude (day month year): ")
+                end_d += timedelta(1)
                 while start_d != end_d:
                     free_days.add(start_d)
                     start_d += timedelta(1)
             case "q":
                 break
             case _:
-                print("selezione non valida")
+                print("invalid choice")
 
     dates: list[date] = [
             start_date + timedelta(i)
@@ -139,7 +137,7 @@ def main():
     m.objective = mip.minimize(mip.xsum(E[i, j] * f[i, j]  for (i, j) in E.keys())) # pyright: ignore[reportOperatorIssue, reportUnknownMemberType, reportUnknownArgumentType]
     status = m.optimize()
     if status == OptimizationStatus.INFEASIBLE:
-        print("Errore nel trovare una soluzione, skill issue del dev.")
+        print("Could not find a solution, try again or dev's skill issue.")
         exit(1)
     print(f"Da {start_date} a {end_date}")
     print(f"Il costo totale è di {m.objective_value}€.")
@@ -147,11 +145,11 @@ def main():
         if k.x > 0.5:   # pyright: ignore[reportOperatorIssue]
             if E[i, j] > 0:
                 if (j - i).days > 7:
-                    title = "IOVIAGGIO mensile"
+                    title = "IOVIAGGIO monthly subscription"
                 elif (j - i).days < 4:
-                    title = f"IOVIAGGIO da {(j - i).days} giorni"
+                    title = f"IOVIAGGIO {(j - i).days}-days subscription"
                 else:
-                    title = f"IOVIAGGIO da 7 giorni"
+                    title = f"IOVIAGGIO 7-days subscription"
                 print(f'{i}->{j - timedelta(1)} {title}')
             else:
                 print(f'{i}->{j - timedelta(1)} no cost')
