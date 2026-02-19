@@ -13,9 +13,6 @@ if TYPE_CHECKING:
     from mip.entities import Var
     from types import FrameType
 
-m = mip.Model()
-m.verbose = 1
-
 def exit_gracefully(_sig_num: int, _stack_frame: FrameType | None):
     print('\nClosing...')
     sys.exit(0)
@@ -121,6 +118,9 @@ def main():
             if interval_cost is None:
                 continue
             E[(dates[i], dates[j])] = interval_cost
+
+    m = mip.Model()
+    m.verbose = 0
 
     f: dict[tuple[date,date], Var] = {(i, j): m.add_var(var_type="B") for (i, j) in E.keys()} # pyright: ignore[reportUnknownMemberType]
     b = {i: 0 for i in dates}
