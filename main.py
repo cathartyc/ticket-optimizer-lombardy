@@ -1,14 +1,22 @@
 from datetime import date, timedelta
+import signal
+import sys
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
 import mip
 from mip.constants import OptimizationStatus
+
 if TYPE_CHECKING:
     from mip.entities import Var
+    from types import FrameType
 
 m = mip.Model()
 m.verbose = 1
+
+def exit_gracefully(_sig_num: int, _stack_frame: FrameType | None):
+    print('\nClosing...')
+    sys.exit(0)
 
 """
 IOVIAGGIO mensile  116.00€
@@ -63,6 +71,8 @@ def parse_date(date_: str) -> date:
     return date(year if year > 2000 else year + 2000, month, day)
 
 def main():
+    _ = signal.signal(signal.SIGINT, exit_gracefully)
+
     free_days: set[date] = set()
 
     start_date: date = parse_date(input("inserire giorno, mese e anno di partenza: "))
