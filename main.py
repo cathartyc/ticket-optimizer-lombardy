@@ -1,7 +1,6 @@
 from __future__ import annotations
 from datetime import date, timedelta
 import signal
-import sys
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 
 def exit_gracefully(_sig_num: int, _stack_frame: FrameType | None):
     print('\nClosing...')
-    sys.exit(0)
+    exit(0)
 
 # IVOL daily ticket
 IVOL_DAILY_COST: Final[float] = 17.5
