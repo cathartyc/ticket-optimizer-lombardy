@@ -1,5 +1,5 @@
-# Ticket planner - Lombardy
-A somewhat useful interactive tool to plan the least expensive choice of IVOL
+# Ticket optimizer - Lombardy
+A somewhat useful interactive tool to find the least expensive choice of IVOL
 (_Io Viaggio Ovunque in Lombardia_, I Travel Everywhere in Lombardy)
 [tickets](https://www.regione.lombardia.it/wps/portal/istituzionale/HP/DettaglioServizio/servizi-e-informazioni/Cittadini/Muoversi-in-Lombardia/biglietti-e-agevolazioni/Io-viaggio/01-io-viaggio-ovunque-in-lombardia-biglietti-giornaliero-settimanale/01-io-viaggio-ovunque-in-lombardia-biglietti-giornaliero-settimanale)
 and
