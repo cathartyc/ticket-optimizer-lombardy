@@ -47,18 +47,18 @@ def cost(i: date, j: date, free_days: set[date]) -> float | None:
             break
     match (delta.days):
         case 1:
-            return DAY_COST
+            return IVOL_DAILY_COST
         case 2:
-            return TWO_DAYS_COST
+            return IVOL_TWO_DAYS_COST
         case 3:
-            return THREE_DAYS_COST
+            return IVOL_THREE_DAYS_COST
         case 7:
-            return WEEK_COST
+            return IVOL_SEVEN_DAYS_COST
         case _:
             if delta.days < 7:
-                return WEEK_COST
+                return IVOL_SEVEN_DAYS_COST
             if is_last_day_of_the_month(i.month, j):
-                return MONTH_COST
+                return IVOL_MONTHLY_COST
             return None
 
 def read_date(prompt: str) -> date:
