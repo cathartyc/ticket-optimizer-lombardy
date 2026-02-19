@@ -67,18 +67,22 @@ def cost(i: date, j: date, free_days: set[date]) -> float | None:
                 return MONTH_COST
             return None
 
-def parse_date(date_: str) -> date:
-    date_split = date_.split()
-    day, month, year = map(lambda x: int(x), date_split)
-    return date(year if year > 2000 else year + 2000, month, day)
+def read_date(prompt: str) -> date:
+    while True:
+        date_split = input(prompt).split()
+        try:
+            day, month, year = map(lambda x: int(x), date_split)
+            return date(year if year > 2000 else year + 2000, month, day)
+        except ValueError:
+            print(f'invalid date')
 
 def main():
     _ = signal.signal(signal.SIGINT, exit_gracefully)
 
     free_days: set[date] = set()
 
-    start_date: date = parse_date(input("inserire giorno, mese e anno di partenza: "))
-    end_date: date = parse_date(input("inserire giorno, mese e anno di arrivo: "))
+    start_date: date = read_date("inserire giorno, mese e anno di partenza: ")
+    end_date: date = read_date("inserire giorno, mese e anno di arrivo (escluso): ")
 
     while True:
         selection = input(dedent("""\
@@ -90,13 +94,13 @@ def main():
         match selection:
             case "1":
                 free_day = input("inserire giorno mese (i weekend sono già esclusi):\n")
-                new_date = parse_date(f"{free_day} {start_date.year}")
+                new_date = read_date(f"{free_day} {start_date.year}")
                 free_days.add(new_date)
             case "2":
                 start = input("inserire giorno mese di partenza:\n")
-                start_d = parse_date(f"{start} {start_date.year}")
+                start_d = read_date(f"{start} {start_date.year}")
                 end = input("inserire giorno mese di arrivo (escluso):\n")
-                end_d = parse_date(f"{end} {start_date.year}")
+                end_d = read_date(f"{end} {start_date.year}")
                 while start_d != end_d:
                     free_days.add(start_d)
                     start_d += timedelta(1)
