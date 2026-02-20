@@ -138,13 +138,17 @@ def main():
             == b[i]
         )
     m.objective = mip.minimize(mip.xsum(E[i, j] * f[i, j]  for (i, j) in E.keys())) # pyright: ignore[reportOperatorIssue, reportUnknownMemberType, reportUnknownArgumentType]
-    m.objective = mip.minimize(mip.xsum(E[i, j] * f[i, j] for (i, j) in E.keys()))
+    # objective function here is (E+1)*f, where the + 1 is meant to reduce the
+    # amount of tickets in cases where you could spend the same amount in e.g.
+    # one tickets instead of two
+    m.objective = mip.minimize(mip.xsum((E[i, j] + 1) * f[i, j] for (i, j) in E.keys()))
+
     status = m.optimize()
     if status == OptimizationStatus.INFEASIBLE:
         print("Could not find a solution, try again or dev's skill issue.")
         exit(1)
-    print(f"Da {start_date} a {end_date}")
-    print(f"Il costo totale è di {m.objective_value}€.")
+    assert m.objective_value is not None
+    result = m.objective_value - sum(int(k.x) for k in f.values() if k.x is not None)
     for (i, j), k in f.items():
         assert k.x is not None # .x is None only when the problem is unfeasible
         if k.x > 0.5:
