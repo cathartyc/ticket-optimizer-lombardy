@@ -102,6 +102,12 @@ def main():
             case _:
                 print("invalid choice")
 
+    # adjust start_date and end_date to consider eventual leading and trailing
+    # free days
+    while start_date in free_days:
+        start_date += ONE_DAY
+    while end_date in free_days:
+        end_date -= ONE_DAY
     dates: list[date] = [
             start_date + timedelta(i)
             for i in range((end_date - start_date).days + 1)
