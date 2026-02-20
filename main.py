@@ -127,17 +127,17 @@ def main():
     while effective_end_date in free_days:
         effective_end_date -= ONE_DAY
 
-    num_dates = (effective_end_date - effective_start_date).days + 1
-
+    # end-start+1, +1 again to account for the extra day (see `cost()`)
+    num_dates = (effective_end_date - effective_start_date).days + 2
     # dates within the range
     dates: list[date] = [
             effective_start_date + ONE_DAY*i
-            for i in range(num_dates + 1)
+            for i in range(num_dates)
     ]
 
     E: dict[tuple[int, int], Real] = {}
-    for i in range(num_dates):
-        for j in range(i+1, num_dates + 1):
+    for i in range(num_dates - 1):
+        for j in range(i + 1, num_dates):
             interval_cost = cost(i, j, dates, free_days)
             if interval_cost is None:
                 continue
