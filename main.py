@@ -40,6 +40,9 @@ def cost(i: int, j: int, dates: list[date], free_days: set[date]) -> float | Non
     # destination = j-1
     j -= 1
     if all(dates[i+d] in free_days for d in range(delta)):
+        # if this range is contained in a bigger free range, ignore it
+        if dates[i-1] in free_days or (j < len(dates)-1 and dates[j+1] in free_days):
+            return None
         return 0
 
     match (delta):
