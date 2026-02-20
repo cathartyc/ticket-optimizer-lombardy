@@ -8,8 +8,8 @@ import mip
 from mip.constants import OptimizationStatus
 
 if TYPE_CHECKING:
+    from mip import Real
     from typing import Final
-    from mip.entities import Var
     from types import FrameType
 
 def exit_gracefully(_sig_num: int, _stack_frame: FrameType | None):
@@ -31,21 +31,15 @@ def is_last_day_of_the_month(month: int, day: date) -> bool:
     """True if the given day is the last day of the given month."""
     return month == day.month and (day + timedelta(1)).day == 1
 
-def cost(i: date, j: date, free_days: set[date]) -> float | None:
+def cost(i: int, j: int, dates: list[date], free_days: set[date]) -> float | None:
+    # there are j-i days between i and j-1 included
     delta = j - i
-    j -= timedelta(1)
-    if i in free_days and j in free_days:
-        return None
-    free_inside_interval = [i+timedelta(d) in free_days for d in range(delta.days)]
-    if all(free_inside_interval):
+    # destination = j-1
+    j -= 1
+    if all(dates[i+d] in free_days for d in range(delta)):
         return 0
-    start = i
-    for d in range(delta.days):
-        if i+timedelta(d) not in free_days:
-            delta = j - start + timedelta(1)
-            start = i+timedelta(d)
-            break
-    match (delta.days):
+
+    match (delta):
         case 1:
             return IVOL_DAILY_COST
         case 2:
@@ -55,9 +49,9 @@ def cost(i: date, j: date, free_days: set[date]) -> float | None:
         case 7:
             return IVOL_SEVEN_DAYS_COST
         case _:
-            if delta.days < 7:
+            if delta < 7:
                 return IVOL_SEVEN_DAYS_COST
-            if is_last_day_of_the_month(i.month, j):
+            if is_last_day_of_the_month(dates[i].month, dates[j]):
                 return IVOL_MONTHLY_COST
             return None
 
@@ -110,30 +104,32 @@ def main():
             for i in range((end_date - start_date).days + 1)
     ]
 
-    E: dict[tuple[date,date], float] = {}
+    E: dict[tuple[int, int], Real] = {}
     for i in range(len(dates)-1):
         for j in range(i+1, len(dates)):
-            interval_cost = cost(dates[i], dates[j], free_days)
+            interval_cost = cost(i, j, dates, free_days)
             if interval_cost is None:
                 continue
-            E[(dates[i], dates[j])] = interval_cost
+            E[(i, j)] = interval_cost
 
     m = mip.Model()
     m.verbose = 0
 
-    f: dict[tuple[date,date], Var] = {(i, j): m.add_var(var_type="B") for (i, j) in E.keys()} # pyright: ignore[reportUnknownMemberType]
-    b = {i: 0 for i in dates}
-    b[start_date] = 1
-    b[end_date] = -1
+    f = {(i, j): m.add_var(var_type="B") for (i, j) in E.keys()}
+    b = {i: 0 for i in range(len(dates))}
+    b[0] = 1
+    b[-1] = -1
 
     # Write flow conservation constraint
     for i in dates:
-        m.add_constr(                                                # pyright: ignore[reportUnknownMemberType]
-              mip.xsum(f[i, j] for j in dates if (i, j) in E.keys()) # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
-            - mip.xsum(f[j, i] for j in dates if (j, i) in E.keys()) # pyright: ignore[reportUnknownMemberType]
+    for i in range(len(dates)):
+        _ = m.add_constr(
+              mip.xsum(f[i, j] for j in range(len(dates)) if (i, j) in E.keys())
+            - mip.xsum(f[j, i] for j in range(len(dates)) if (j, i) in E.keys())
             == b[i]
         )
     m.objective = mip.minimize(mip.xsum(E[i, j] * f[i, j]  for (i, j) in E.keys())) # pyright: ignore[reportOperatorIssue, reportUnknownMemberType, reportUnknownArgumentType]
+    m.objective = mip.minimize(mip.xsum(E[i, j] * f[i, j] for (i, j) in E.keys()))
     status = m.optimize()
     if status == OptimizationStatus.INFEASIBLE:
         print("Could not find a solution, try again or dev's skill issue.")
@@ -141,17 +137,18 @@ def main():
     print(f"Da {start_date} a {end_date}")
     print(f"Il costo totale è di {m.objective_value}€.")
     for (i, j), k in f.items():
-        if k.x > 0.5:   # pyright: ignore[reportOperatorIssue]
+        assert k.x is not None # .x is None only when the problem is unfeasible
+        if k.x > 0.5:
             if E[i, j] > 0:
-                if (j - i).days > 7:
+                if j - i > 7:
                     title = "IOVIAGGIO monthly subscription"
-                elif (j - i).days < 4:
-                    title = f"IOVIAGGIO {(j - i).days}-days subscription"
+                elif j - i < 4:
+                    title = f"IOVIAGGIO {j - i}-days subscription"
                 else:
                     title = f"IOVIAGGIO 7-days subscription"
-                print(f'{i}->{j - timedelta(1)} {title}')
+                print(f'{i}->{j - i} {title}')
             else:
-                print(f'{i}->{j - timedelta(1)} no cost')
+                print(f'{i}->{j - i} no cost')
 
 
 if __name__ == "__main__":
