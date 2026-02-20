@@ -152,6 +152,7 @@ def main():
         exit(1)
     assert m.objective_value is not None
     result = m.objective_value - sum(int(k.x) for k in f.values() if k.x is not None)
+    print(f"\nTotal cost is {result}€:")
     for (i, j), k in f.items():
         assert k.x is not None # .x is None only when the problem is unfeasible
         if k.x > 0.5:
@@ -162,9 +163,9 @@ def main():
                     title = f"IOVIAGGIO {j - i}-days subscription"
                 else:
                     title = f"IOVIAGGIO 7-days subscription"
-                print(f'{i}->{j - i} {title}')
+                print(f'{dates[i]}->{dates[j-1]} {title}')
             else:
-                print(f'{i}->{j - i} no cost')
+                print(f'{dates[i]}->{dates[j-1]} no cost')
 
 
 if __name__ == "__main__":
