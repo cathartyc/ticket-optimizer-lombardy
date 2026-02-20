@@ -107,15 +107,18 @@ def main():
 
     # adjust start_date and end_date to consider eventual leading and trailing
     # free days
-    while start_date in free_days:
-        start_date += ONE_DAY
-    while end_date in free_days:
-        end_date -= ONE_DAY
-    num_dates = (end_date - start_date).days + 1
+    effective_start_date = start_date
+    while effective_start_date in free_days:
+        effective_start_date += ONE_DAY
+    effective_end_date = end_date
+    while effective_end_date in free_days:
+        effective_end_date -= ONE_DAY
+
+    num_dates = (effective_end_date - effective_start_date).days + 1
 
     # dates within the range
     dates: list[date] = [
-            start_date + ONE_DAY*i
+            effective_start_date + ONE_DAY*i
             for i in range(num_dates + 1)
     ]
 
@@ -156,6 +159,10 @@ def main():
     assert m.objective_value is not None
     result = m.objective_value - sum(int(k.x) for k in f.values() if k.x is not None)
     print(f"\nTotal cost is {result}€:")
+
+    if effective_start_date != start_date:
+        print(f'{start_date}->{effective_start_date-ONE_DAY} no cost')
+
     for (i, j), k in f.items():
         assert k.x is not None # .x is None only when the problem is unfeasible
         if k.x > 0.5:
@@ -169,6 +176,9 @@ def main():
                 print(f'{dates[i]}->{dates[j-1]} {title}')
             else:
                 print(f'{dates[i]}->{dates[j-1]} no cost')
+
+    if effective_end_date != end_date:
+        print(f'{effective_end_date}->{end_date} no cost')
 
 
 if __name__ == "__main__":
