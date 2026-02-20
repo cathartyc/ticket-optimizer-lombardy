@@ -27,9 +27,12 @@ IVOL_SEVEN_DAYS_COST: Final[float] = 46.5
 # IVOL monthly subscription
 IVOL_MONTHLY_COST: Final[float] = 116.0
 
+ONE_DAY: Final[timedelta] = timedelta(1)
+
 def is_last_day_of_the_month(month: int, day: date) -> bool:
     """True if the given day is the last day of the given month."""
-    return month == day.month and (day + timedelta(1)).day == 1
+    return month == day.month and (day + ONE_DAY).day == 1
+
 
 def cost(i: int, j: int, dates: list[date], free_days: set[date]) -> float | None:
     # there are j-i days between i and j-1 included
@@ -90,10 +93,10 @@ def main():
                 print("2: exclude a range")
                 start_d = read_date("insert first day of the range to exclude (day month year): ")
                 end_d = read_date("insert last day of the range to exclude (day month year): ")
-                end_d += timedelta(1)
+                end_d += ONE_DAY
                 while start_d != end_d:
                     free_days.add(start_d)
-                    start_d += timedelta(1)
+                    start_d += ONE_DAY
             case "q":
                 break
             case _:
