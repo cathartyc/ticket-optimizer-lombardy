@@ -8,7 +8,6 @@ import mip
 from mip.constants import OptimizationStatus
 
 if TYPE_CHECKING:
-    from mip import Real
     from typing import Final
     from types import FrameType
 
@@ -29,12 +28,23 @@ IVOL_MONTHLY_COST: Final[float] = 116.0
 
 ONE_DAY: Final[timedelta] = timedelta(1)
 
+
 def is_last_day_of_the_month(month: int, day: date) -> bool:
     """True if the given day is the last day of the given month."""
     return month == day.month and (day + ONE_DAY).day == 1
 
 
 def cost(i: int, j: int, dates: list[date], free_days: set[date]) -> float | None:
+    """Cost function: takes two dates and retrieves the cost of the cheapest
+    title that covers all the non-free days from the day i to the day j-1.
+
+    :param i:           the index of the first date
+    :param j:           the index of the last date+1
+    :param dates:       the list of dates
+    :param free_days:   the set of free days
+
+    :return: the cost of the range, or None if it is not worth considering it
+    """
     # there are j-i days between i and j-1 included
     delta = j - i
     # destination = j-1
@@ -61,7 +71,14 @@ def cost(i: int, j: int, dates: list[date], free_days: set[date]) -> float | Non
                 return IVOL_MONTHLY_COST
             return None
 
+
 def read_date(prompt: str) -> date:
+    """Reads the user input continuously, until a proper date is inserted.
+
+    :param prompt: the string to show to the user (passed as is to `input()`)
+
+    :return: the given date, wrapped in a `datetime.date` object
+    """
     while True:
         date_split = input(prompt).split()
         try:
@@ -69,6 +86,7 @@ def read_date(prompt: str) -> date:
             return date(year if year > 2000 else year + 2000, month, day)
         except ValueError:
             print(f'invalid date')
+
 
 def get_free_days(start_date: date, end_date: date) -> set[date]:
     """Asks the user for free days as single days or range of days.
@@ -127,8 +145,8 @@ def main():
     # capture ^C
     _ = signal.signal(signal.SIGINT, exit_gracefully)
 
-    start_date: date = read_date("insert the first day you wanna travel (day month year): ")
-    end_date: date = read_date("insert the last day you wanna travel (day month year): ")
+    start_date = read_date("insert the first day you wanna travel (day month year): ")
+    end_date = read_date("insert the last day you wanna travel (day month year): ")
 
     free_days = get_free_days(start_date, end_date)
 
@@ -137,6 +155,7 @@ def main():
     effective_start_date = start_date
     while effective_start_date in free_days:
         effective_start_date += ONE_DAY
+
     effective_end_date = end_date
     while effective_end_date in free_days:
         effective_end_date -= ONE_DAY
@@ -149,63 +168,77 @@ def main():
             for i in range(num_dates)
     ]
 
-    E: dict[tuple[int, int], Real] = {}
+    # cost graph. (i,j) => "cost to cover the days from i to j-1"
+    graph: dict[tuple[int, int], float] = {}
     for i in range(num_dates - 1):
         for j in range(i + 1, num_dates):
-            interval_cost = cost(i, j, dates, free_days)
-            if interval_cost is None:
+            range_cost = cost(i, j, dates, free_days)
+            if range_cost is None:
                 continue
-            E[(i, j)] = interval_cost
+            graph[(i, j)] = range_cost
 
+    # initialize mip solver
+    # TODO: move out of here
     m = mip.Model()
     m.verbose = 0
 
-    f = {(i, j): m.add_var(var_type="B") for (i, j) in E.keys()}
-    b = [0] * num_dates
-    b[0] = 1
-    b[-1] = -1
+    # mip variables, one for each node in the cost graph.
+    X = {(i, j): m.add_var(var_type="B") for (i, j) in graph.keys()}
 
-    # Write flow conservation constraint
-    for i in dates:
+    # net flow sum for each day.
+    # b[x] = "#arcs outgoing from x" - "#arcs entering x"
+    net_flow = [0] * num_dates
+    net_flow[0] = 1    # there can be only one outgoing arc from start
+    net_flow[-1] = -1  # there can be only one incoming arc in end
+
+    # flow conservation constraints => impose sum of outgoing and incoming arc
+    # involving each node to be the its respective net flow value.
     for i in range(num_dates):
         _ = m.add_constr(
-              mip.xsum(f[i, j] for j in range(num_dates) if (i, j) in E.keys())
-            - mip.xsum(f[j, i] for j in range(num_dates) if (j, i) in E.keys())
-            == b[i]
+                  mip.xsum(X[i, j] for j in range(num_dates) if (i, j) in graph.keys())
+                - mip.xsum(X[j, i] for j in range(num_dates) if (j, i) in graph.keys())
+                == net_flow[i]
         )
 
-    # objective function here is (E+1)*f, where the + 1 is meant to reduce the
-    # amount of tickets in cases where you could spend the same amount in e.g.
-    # one tickets instead of two
-    m.objective = mip.minimize(mip.xsum((E[i, j] + 1) * f[i, j] for (i, j) in E.keys()))
+    # objective function here is (graph+1)*X, where the +1 is meant to reduce
+    # the amount of tickets in cases where you could spend the same amount in
+    # e.g. one tickets instead of two.
+    m.objective = mip.minimize(mip.xsum((graph[i, j] + 1)*X[i, j] for (i, j) in graph.keys()))
 
+    # search solution
     status = m.optimize()
     if status == OptimizationStatus.INFEASIBLE:
         print("Could not find a solution, try again or dev's skill issue.")
         exit(1)
+
     assert m.objective_value is not None
-    result = m.objective_value - sum(int(k.x) for k in f.values() if k.x is not None)
+    # remove the "+1" introduced in the objective function
+    result = m.objective_value - sum(int(k.x) for k in X.values() if k.x is not None)
     print(f"\nTotal cost is {result}€:")
 
-    if effective_start_date != start_date:
-        print(f'{start_date}->{effective_start_date-ONE_DAY} no cost')
+    # print the list of tickets to buy
 
-    for (i, j), k in f.items():
-        assert k.x is not None # .x is None only when the problem is unfeasible
-        if k.x > 0.5:
-            if E[i, j] > 0:
+    # explicitly state if there are free days since start
+    if effective_start_date != start_date:
+        print(f'{start_date}->{effective_start_date-ONE_DAY}\tno cost')
+
+    for (i, j), k in X.items():
+        assert k.x is not None # .x is None only when the problem is infeasible
+        if k.x == 1.0:
+            if graph[i, j] > 0:
                 if j - i > 7:
                     title = "IOVIAGGIO monthly subscription"
                 elif j - i < 4:
                     title = f"IOVIAGGIO {j - i}-days subscription"
                 else:
                     title = f"IOVIAGGIO 7-days subscription"
-                print(f'{dates[i]}->{dates[j-1]} {title}')
+                print(f'{dates[i]}->{dates[j-1]}\t{title}')
             else:
-                print(f'{dates[i]}->{dates[j-1]} no cost')
+                print(f'{dates[i]}->{dates[j-1]}\tno cost')
 
+    # explicitly state if there are free days at the end
     if effective_end_date != end_date:
-        print(f'{effective_end_date}->{end_date} no cost')
+        print(f'{effective_end_date}->{end_date}\tno cost')
 
 
 if __name__ == "__main__":
