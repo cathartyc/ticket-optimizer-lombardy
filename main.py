@@ -108,14 +108,17 @@ def main():
         start_date += ONE_DAY
     while end_date in free_days:
         end_date -= ONE_DAY
+    num_dates = (end_date - start_date).days + 1
+
+    # dates within the range
     dates: list[date] = [
-            start_date + timedelta(i)
-            for i in range((end_date - start_date).days + 1)
+            start_date + ONE_DAY*i
+            for i in range(num_dates + 1)
     ]
 
     E: dict[tuple[int, int], Real] = {}
-    for i in range(len(dates)-1):
-        for j in range(i+1, len(dates)):
+    for i in range(num_dates):
+        for j in range(i+1, num_dates + 1):
             interval_cost = cost(i, j, dates, free_days)
             if interval_cost is None:
                 continue
@@ -131,13 +134,13 @@ def main():
 
     # Write flow conservation constraint
     for i in dates:
-    for i in range(len(dates)):
+    for i in range(num_dates):
         _ = m.add_constr(
-              mip.xsum(f[i, j] for j in range(len(dates)) if (i, j) in E.keys())
-            - mip.xsum(f[j, i] for j in range(len(dates)) if (j, i) in E.keys())
+              mip.xsum(f[i, j] for j in range(num_dates) if (i, j) in E.keys())
+            - mip.xsum(f[j, i] for j in range(num_dates) if (j, i) in E.keys())
             == b[i]
         )
-    m.objective = mip.minimize(mip.xsum(E[i, j] * f[i, j]  for (i, j) in E.keys())) # pyright: ignore[reportOperatorIssue, reportUnknownMemberType, reportUnknownArgumentType]
+
     # objective function here is (E+1)*f, where the + 1 is meant to reduce the
     # amount of tickets in cases where you could spend the same amount in e.g.
     # one tickets instead of two
