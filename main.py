@@ -70,12 +70,32 @@ def read_date(prompt: str) -> date:
         except ValueError:
             print(f'invalid date')
 
-def get_free_days() -> set[date]:
+def get_free_days(start_date: date, end_date: date) -> set[date]:
     """Asks the user for free days as single days or range of days.
 
     :return: a set containing the user-defined free days
     """
     free_days: set[date] = set()
+
+    # ask for weekends
+    while True:
+        ignore_weekends = input("Do you want to ignore weekends? [Y/n]: ")
+        match ignore_weekends:
+            case ('Y' | 'y' | ''):
+                # add weekends to set
+                free_days.update(
+                        start_date + ONE_DAY*i
+                        for i in range((end_date - start_date).days + 1)
+                        if (start_date + ONE_DAY*i).weekday() >= 5
+                )
+                break
+            case ('N' | 'n'):
+                # don't count weekends as free days, break
+                break
+            case _:
+                # repeat prompt
+                pass
+
     while True:
         selection = input(dedent("""\
             Would you like to exclude some days?
@@ -110,13 +130,7 @@ def main():
     start_date: date = read_date("insert the first day you wanna travel (day month year): ")
     end_date: date = read_date("insert the last day you wanna travel (day month year): ")
 
-    # add weekends
-    #free_days.update([
-    #    start_date + timedelta(i)
-    #    for i in range((end_date - start_date).days + 1)
-    #    if (start_date + timedelta(i)).weekday() >= 5])
-
-    free_days = get_free_days()
+    free_days = get_free_days(start_date, end_date)
 
     # adjust start_date and end_date to consider eventual leading and trailing
     # free days
