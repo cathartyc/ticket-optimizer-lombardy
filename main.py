@@ -54,7 +54,7 @@ def cost(i: int, j: int, dates: list[date], free_days: set[date]) -> float | Non
         case _:
             if delta < 7:
                 return IVOL_SEVEN_DAYS_COST
-            if is_last_day_of_the_month(dates[i].month, dates[j]):
+            if dates[i].month == dates[j].month:
                 return IVOL_MONTHLY_COST
             return None
 
