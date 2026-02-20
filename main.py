@@ -125,7 +125,7 @@ def main():
     m.verbose = 0
 
     f = {(i, j): m.add_var(var_type="B") for (i, j) in E.keys()}
-    b = {i: 0 for i in range(len(dates))}
+    b = [0] * num_dates
     b[0] = 1
     b[-1] = -1
 
